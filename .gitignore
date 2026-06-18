@@ -1,0 +1,23 @@
+# Build
+.build/
+*.app
+*.dmg
+*.pkg
+
+# SwiftPM
+Package.resolved
+
+# macOS
+.DS_Store
+
+# Local editor/agent settings
+.claude/settings.local.json
+
+# Xcode (if opened)
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# Generated icon intermediates
+.build/wallpaps-icon-1024.png
+.build/AppIcon.iconset
