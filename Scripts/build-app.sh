@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="WallPaps"
 BUNDLE_ID="com.local.wallpaps"
-VERSION="1.0"
+VERSION="1.0.1"
 
 echo "▶︎ Derleniyor (release)…"
 swift build -c release
