@@ -16,6 +16,9 @@ enum Entry {
         if let i = args.firstIndex(of: "--previewwelcome"), i + 1 < args.count {
             MainActor.assumeIsolated { WelcomePreview.render(to: args[i + 1]) } // never returns
         }
+        if let i = args.firstIndex(of: "--shots"), i + 1 < args.count {
+            ShotsGenerator.run(outDir: args[i + 1]) // never returns
+        }
         WallPapsApp.main()
     }
 }
