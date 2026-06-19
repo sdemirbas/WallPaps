@@ -1,0 +1,49 @@
+name: Release
+
+# Bir sürüm etiketi (v1.0, v1.1 …) push edildiğinde DMG üretir ve Release oluşturur.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release etiketi (ör. v1.1)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode'u seç (Swift 6)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Derle + .app + DMG
+        run: ./Scripts/make-dmg.sh
+
+      - name: Sürüm bilgisini belirle
+        id: ver
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Release oluştur / güncelle
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: WallPaps ${{ steps.ver.outputs.tag }}
+          files: WallPaps.dmg
+          body: |
+            ## WallPaps ${{ steps.ver.outputs.tag }}
+
+            Kamu malı (CC0) tabloları aydınlatılmış galeri duvarı hissiyle 4K duvar
+            kâğıdına dönüştüren, düşük enerjili ücretsiz macOS menü-çubuğu uygulaması.
+
+            **Kurulum:** `WallPaps.dmg`'yi indir → aç → Applications'a sürükle.
+            İmzasız olduğu için ilk açılışta **sağ tık → Aç** (Gatekeeper).
+
+            Gereksinim: macOS 14+ (Apple Silicon).

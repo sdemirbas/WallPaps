@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WallPaps — Masaüstündeki günlük müze</title>
+<meta name="description" content="Dünyaca ünlü ressamların kamu malı (CC0) tablolarını, aydınlatılmış bir galeri duvarı hissiyle 4K masaüstü duvar kâğıdına dönüştüren ücretsiz macOS uygulaması.">
+<link rel="icon" type="image/png" href="icon-180.png">
+<meta property="og:title" content="WallPaps — Masaüstündeki günlük müze">
+<meta property="og:description" content="Ünlü ressamların CC0 tabloları, çerçeveli birer 4K duvar kâğıdı olarak masaüstünde.">
+<meta property="og:image" content="icon.png">
+<meta name="theme-color" content="#0c0a09">
+<style>
+  :root{
+    --wall-1:#1a1612; --wall-2:#0b0908; --panel:#161210;
+    --brass:#c9a24b; --brass-2:#e3c279; --ivory:#ece7dd; --muted:#9a948a;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--sans); color:var(--ivory); line-height:1.6;
+    background:
+      radial-gradient(1200px 700px at 75% -10%, rgba(201,162,75,.10), transparent 60%),
+      linear-gradient(180deg, var(--wall-1), var(--wall-2));
+    background-attachment:fixed; min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* faint plaster grain */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.04; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+  .kicker{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--brass);font-weight:600}
+  .serif{font-family:var(--serif)}
+
+  /* Header */
+  header{display:flex;align-items:center;justify-content:space-between;padding:26px 0}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand img{width:34px;height:34px;border-radius:8px}
+  .brand b{font-family:var(--serif);font-size:21px;font-weight:600;letter-spacing:.3px}
+  .ghlink{font-size:14px;color:var(--muted);text-decoration:none;border:1px solid rgba(201,162,75,.25);
+    padding:8px 14px;border-radius:999px;transition:.2s}
+  .ghlink:hover{color:var(--ivory);border-color:var(--brass)}
+
+  /* Hero */
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;
+    padding:56px 0 70px;border-bottom:1px solid rgba(201,162,75,.16)}
+  .hero h1{font-family:var(--serif);font-size:52px;line-height:1.05;font-weight:600;margin:14px 0 10px}
+  .hero p.lead{font-size:18px;color:#cfc9bd;max-width:30em}
+  .cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:28px}
+  .btn{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(180deg,var(--brass-2),var(--brass));
+    color:#211a06;font-weight:700;text-decoration:none;padding:14px 22px;border-radius:11px;
+    box-shadow:0 10px 30px rgba(201,162,75,.25);transition:.2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 14px 34px rgba(201,162,75,.34)}
+  .btn small{display:block;font-weight:500;font-size:11px;opacity:.7}
+  .btn-ghost{color:var(--ivory);text-decoration:none;font-size:15px;border-bottom:1px solid rgba(201,162,75,.4);padding-bottom:2px}
+  .note{margin-top:16px;font-size:12.5px;color:var(--muted)}
+  .note code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;font-size:12px}
+
+  /* Framed artwork (CSS, echoes the app) */
+  .frameWrap{position:relative;display:flex;justify-content:center}
+  .spot{position:absolute;inset:-40px;background:radial-gradient(circle at 50% 35%,rgba(255,236,190,.18),transparent 60%);
+    filter:blur(8px)}
+  .frame{position:relative;background:#0e0b08;padding:16px;border-radius:3px;
+    box-shadow:0 30px 60px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);
+    background-image:linear-gradient(135deg,#caa24f,#6e521e 45%,#caa24f 70%,#5a4317)}
+  .matte{background:#f3efe7;padding:22px;border-radius:1px}
+  .canvas{width:300px;height:225px;border-radius:1px;position:relative;overflow:hidden;
+    background:linear-gradient(180deg,#fcd25c,#ee7349)}
+  .sun{position:absolute;width:58px;height:58px;border-radius:50%;background:#fff6dd;
+    right:54px;top:42px;box-shadow:0 0 40px rgba(255,246,221,.8)}
+  .hill{position:absolute;left:-10%;right:-10%;bottom:-46px;height:120px;border-radius:50%;
+    background:#4e7488}
+  .placard{position:absolute;left:50%;transform:translateX(-50%);bottom:-30px;
+    background:linear-gradient(180deg,#caa24f,#8a6c28);color:#241a06;font-family:var(--serif);
+    font-size:12px;padding:6px 16px;border-radius:3px;white-space:nowrap;
+    box-shadow:0 8px 18px rgba(0,0,0,.45);border:1px solid rgba(60,44,12,.6)}
+
+  /* Sections */
+  section{padding:66px 0;border-bottom:1px solid rgba(201,162,75,.12)}
+  h2.head{font-family:var(--serif);font-size:30px;font-weight:600;margin:8px 0 6px}
+  .sub{color:var(--muted);max-width:40em}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}
+  .card{background:var(--panel);border:1px solid rgba(201,162,75,.14);border-radius:14px;padding:22px}
+  .card .ic{font-size:22px}
+  .card h3{font-family:var(--serif);font-size:18px;font-weight:600;margin:12px 0 6px}
+  .card p{font-size:14px;color:#c4bdb1}
+
+  /* Install steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px;counter-reset:s}
+  .step{background:var(--panel);border:1px solid rgba(201,162,75,.14);border-radius:14px;padding:22px;position:relative}
+  .step::before{counter-increment:s;content:counter(s);font-family:var(--serif);font-size:14px;font-weight:700;
+    color:#241a06;background:var(--brass);width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+  .step b{font-family:var(--serif);font-size:16px}
+  .step p{font-size:13.5px;color:#c4bdb1;margin-top:5px}
+  .step code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;font-size:12px}
+
+  footer{padding:46px 0 60px;color:var(--muted);font-size:13.5px}
+  footer .row{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:center}
+  footer a{color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
+  footer a:hover{color:var(--ivory);border-color:var(--brass)}
+
+  @media (max-width:820px){
+    .hero{grid-template-columns:1fr;gap:40px}
+    .hero h1{font-size:40px}
+    .grid,.steps{grid-template-columns:1fr}
+    .frameWrap{order:-1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand"><img src="icon.png" alt="WallPaps"><b>WallPaps</b></div>
+    <a class="ghlink" href="https://github.com/sdemirbas/WallPaps">GitHub'da gör ↗</a>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <div class="kicker">macOS · ücretsiz · açık kaynak</div>
+      <h1>Masaüstündeki<br>günlük müze.</h1>
+      <p class="lead">Dünyaca ünlü ressamların <b>kamu malı</b> tablolarını,
+        aydınlatılmış bir galeri duvarı hissiyle <b>4K</b> duvar kâğıdına dönüştürür —
+        düşük enerjiyle, belirli aralıklarla yenilenir.</p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/sdemirbas/WallPaps/releases/latest/download/WallPaps.dmg">
+          ↓ İndir <small>WallPaps.dmg · macOS 14+</small>
+        </a>
+        <a class="btn-ghost" href="#kurulum">Nasıl kurulur?</a>
+      </div>
+      <p class="note">İmzasız sürüm: ilk açılışta uygulamaya <b>sağ tık → Aç</b>
+        (ya da <code>xattr -dr com.apple.quarantine WallPaps.app</code>).</p>
+    </div>
+
+    <div class="frameWrap">
+      <div class="spot"></div>
+      <div class="frame">
+        <div class="matte">
+          <div class="canvas">
+            <div class="sun"></div>
+            <div class="hill"></div>
+          </div>
+        </div>
+        <div class="placard">Vincent van Gogh · 1889</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="ozellikler">
+    <div class="kicker">koleksiyon</div>
+    <h2 class="head">Bir galeri, masaüstünde.</h2>
+    <p class="sub">Her tablo aydınlatılmış bir müze duvarına asılmış gibi — çerçeve, paspartu,
+      pirinç etiket ve günün saatine göre ısınan ortam.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🏛️</div><h3>Galeri atmosferi</h3><p>Spot ışığı, vinyet, ince doku, kabartmalı müze etiketi ve günün saatine göre ısınan duvar.</p></div>
+      <div class="card"><div class="ic">🖼️</div><h3>Sergi modu</h3><p>Eseri büyük, yavaş Ken Burns kaymasıyla; yanında müzenin "küratör notu".</p></div>
+      <div class="card"><div class="ic">🎨</div><h3>53 sanatçı</h3><p>Van Gogh'tan Vermeer'e, Hokusai'den Caravaggio'ya — Rönesans'tan empresyonizme.</p></div>
+      <div class="card"><div class="ic">🗂️</div><h3>Küratörlü koleksiyonlar</h3><p>İzlenimcilik, Japon Baskıları, Hollanda Ustaları, Portreler + "bu haftanın koleksiyonu".</p></div>
+      <div class="card"><div class="ic">🖌️</div><h3>Döneme uygun çerçeve</h3><p>Barok → yaldız, empresyonist → klasik, modern → minimal; her eser "doğru asılmış".</p></div>
+      <div class="card"><div class="ic">🌐</div><h3>Hep güncel</h3><p>Yeni sanatçılar uygulama güncellemesi olmadan eklenir; arayüz Türkçe/İngilizce.</p></div>
+    </div>
+  </section>
+
+  <!-- SOURCES -->
+  <section>
+    <div class="kicker">kaynak</div>
+    <h2 class="head">Yasal, ücretsiz, CC0.</h2>
+    <p class="sub">Tüm görseller, dünyanın önde gelen müzelerinin açık-erişim koleksiyonlarından
+      gelir ve kamu malıdır (CC0) — sınırsız kullanım.</p>
+    <div class="grid">
+      <div class="card"><h3>Art Institute of Chicago</h3><p>IIIF Image API ile yüksek çözünürlük.</p></div>
+      <div class="card"><h3>The Met</h3><p>Open Access — 400.000+ eser.</p></div>
+      <div class="card"><h3>Cleveland Museum of Art</h3><p>Full-res (>10.000px) CC0 görseller.</p></div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="kurulum">
+    <div class="kicker">kurulum</div>
+    <h2 class="head">Üç adımda.</h2>
+    <div class="steps">
+      <div class="step"><b>İndir</b><p><code>WallPaps.dmg</code>'yi indir ve aç.</p></div>
+      <div class="step"><b>Sürükle</b><p>WallPaps'i Applications klasörüne sürükle.</p></div>
+      <div class="step"><b>Sağ tık → Aç</b><p>İlk açılışta (imzasız sürüm) Gatekeeper için bir kez sağ tıkla, <b>Aç</b> de. Menü çubuğunda 🖼️ belirir.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="row">
+      <div>© 2026 WallPaps · MIT · <a href="https://github.com/sdemirbas/WallPaps">github.com/sdemirbas/WallPaps</a></div>
+      <div>Görseller CC0: Art Institute of Chicago · The Met · Cleveland Museum of Art</div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

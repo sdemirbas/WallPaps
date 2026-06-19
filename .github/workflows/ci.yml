@@ -1,0 +1,22 @@
+name: CI
+
+# main'e her push'ta ve PR'da derlemenin bozulmadığını doğrular.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Derle (release)
+        run: swift build -c release
+      - name: Self-test (pipeline + katalog + render)
+        run: .build/release/WallPaps --selftest
