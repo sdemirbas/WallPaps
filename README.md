@@ -93,17 +93,18 @@ Uygulama manifest'i `https://raw.githubusercontent.com/sdemirbas/WallPaps/main/c
 adresinden çeker (`CatalogService.swift` içindeki `manifestURL`). Ağ/erişim olmazsa uygulama
 **gömülü varsayılan kataloğa** (53 sanatçı) düşer — asla kırılmaz.
 
-## Dağıtım (ücretsiz, GitHub)
+## Dağıtım (GitHub)
+
+Yayın DMG'si **Apple tarafından notarize** edilmiştir — kullanıcı indirip **çift tıklayarak**
+açar, Gatekeeper uyarısı çıkmaz.
 
 ```bash
-./Scripts/make-dmg.sh        # imzasız DMG üretir
+# Notarize edilmiş DMG üret (Developer ID + notarize + staple)
+SIGN_ID="Developer ID Application: Adın (TEAMID)" ./Scripts/notarize.sh
+# sonra GitHub Releases'e yükle (ya da bir tag push'la → Actions otomatik yapar)
 ```
 
-DMG'yi **GitHub Releases**'e yükle. Apple Developer ücreti olmadan dağıtım: kullanıcı
-indirince ilk açılışta **sağ tık → Aç** (Gatekeeper) demelidir — README'de belirt.
-
-> İleride uyarısız kurulum istersen: Apple Developer Program ($99/yıl) ile `./Scripts/notarize.sh`
-> (Developer ID + notarize + staple) veya `./Scripts/build-appstore.sh` (App Store) hazır.
+> İmzasız hızlı DMG (geliştirme): `./Scripts/make-dmg.sh`. App Store için: `./Scripts/build-appstore.sh`.
 
 ## Dosyalar nerede?
 
