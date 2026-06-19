@@ -1,5 +1,7 @@
 # WallPaps 🖼️
 
+**🌐 [wallpaps.vercel.app](https://wallpaps.vercel.app)** · **📥 [İndir (DMG)](https://github.com/sdemirbas/WallPaps/releases/latest/download/WallPaps.dmg)** · macOS 14+ · ücretsiz · CC0
+
 Dünyaca ünlü ressamların **kamu malı (public domain)** tablolarını, sade bir
 **paspartu/çerçeve** içinde **4K** masaüstü duvar kâğıdına dönüştüren ve belirli
 aralıklarla **düşük enerjiyle** yenileyen, ücretsiz bir macOS menü-çubuğu uygulaması.
