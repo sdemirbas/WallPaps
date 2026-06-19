@@ -1,6 +1,18 @@
 # WallPaps 🖼️
 
-**🌐 [wallpaps.vercel.app](https://wallpaps.vercel.app)** · **📥 [İndir (DMG)](https://github.com/sdemirbas/WallPaps/releases/latest/download/WallPaps.dmg)** · macOS 14+ · ücretsiz · CC0
+[![Release](https://img.shields.io/github/v/release/sdemirbas/WallPaps?color=c9a24b)](https://github.com/sdemirbas/WallPaps/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/sdemirbas/WallPaps/total?color=c9a24b)](https://github.com/sdemirbas/WallPaps/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-c9a24b)](LICENSE)
+[![Website](https://img.shields.io/badge/web-wallpaps.vercel.app-c9a24b)](https://wallpaps.vercel.app)
+![Platform](https://img.shields.io/badge/macOS-14%2B%20·%20Apple%20Silicon-555)
+
+**🌐 [wallpaps.vercel.app](https://wallpaps.vercel.app)** · **📥 [İndir (DMG)](https://github.com/sdemirbas/WallPaps/releases/latest/download/WallPaps.dmg)** · macOS 14+ · ücretsiz · notarize'lı · CC0
+
+<p align="center">
+  <img src="web/shots/vangogh.jpg" width="32%" alt="Van Gogh — vintage çerçeve">
+  <img src="web/shots/monet.jpg" width="32%" alt="Monet — klasik çerçeve">
+  <img src="web/shots/hokusai.jpg" width="32%" alt="Hokusai — modern çerçeve">
+</p>
 
 Dünyaca ünlü ressamların **kamu malı (public domain)** tablolarını, sade bir
 **paspartu/çerçeve** içinde **4K** masaüstü duvar kâğıdına dönüştüren ve belirli
