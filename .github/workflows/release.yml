@@ -143,10 +143,10 @@ jobs:
           echo "$SPARKLE_ED_PRIVATE_KEY" > "$KEY_FILE"
 
           DOWNLOAD_PREFIX="https://github.com/${{ github.repository }}/releases/download/${TAG}/"
+          # generate_appcast --output desteklemez; çıktıyı tarama dizinine yazar.
           "$GENERATE" \
             --ed-key-file "$KEY_FILE" \
             --download-url-prefix "$DOWNLOAD_PREFIX" \
-            --output appcast.xml \
             .
 
           # appcast.xml'i main branch'e commit et
