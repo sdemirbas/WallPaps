@@ -137,6 +137,12 @@ jobs:
             exit 0
           fi
 
+          # Özel anahtar yoksa appcast adımını atla
+          if [[ -z "$SPARKLE_ED_PRIVATE_KEY" ]]; then
+            echo "  (uyarı: SPARKLE_ED_PRIVATE_KEY secret eksik; appcast güncellenmedi)"
+            exit 0
+          fi
+
           # Özel anahtarı geçici dosyaya yaz
           KEY_FILE="$(mktemp)"
           trap 'rm -f "$KEY_FILE"' EXIT
