@@ -177,6 +177,8 @@ enum WelcomePreview {
 
 /// About / credits — shown as a section inside the settings form.
 struct AboutSection: View {
+    @ObservedObject private var updater = UpdaterService.shared
+
     private var version: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
@@ -187,6 +189,11 @@ struct AboutSection: View {
                 Image(systemName: "photo.artframe").foregroundStyle(Gallery.brass)
                 Text("WallPaps").font(.headline)
                 Text("v\(version)").foregroundStyle(.secondary)
+                Spacer()
+                Button(t("update.checkNow")) { updater.checkForUpdates() }
+                    .disabled(!updater.canCheckForUpdates)
+                    .buttonStyle(.borderless)
+                    .font(.caption)
             }
             Text(t("about.cc0"))
                 .font(.caption).foregroundStyle(.secondary)

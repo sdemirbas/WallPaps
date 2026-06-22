@@ -22,6 +22,10 @@ let artNetwork: URLSession = {
     config.requestCachePolicy = .returnCacheDataElseLoad
     config.timeoutIntervalForRequest = 30
     config.waitsForConnectivity = false
+    // Cap in-memory cache to prevent unbounded growth from large image downloads.
+    config.urlCache = URLCache(memoryCapacity: 8 * 1024 * 1024,
+                               diskCapacity: 80 * 1024 * 1024,
+                               directory: nil)
     return URLSession(configuration: config)
 }()
 

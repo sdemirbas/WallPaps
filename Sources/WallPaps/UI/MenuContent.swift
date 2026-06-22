@@ -8,6 +8,7 @@ struct MenuContent: View {
     @ObservedObject private var library = AppController.shared.library
     @ObservedObject private var favorites = AppController.shared.favorites
     @ObservedObject private var catalog = AppController.shared.catalog
+    @ObservedObject private var updater = UpdaterService.shared
 
     var body: some View {
         if let entry = library.current {
@@ -176,6 +177,14 @@ struct MenuContent: View {
             Divider()
             Text(t("menu.working")).foregroundStyle(.secondary)
         }
+
+        Divider()
+
+        Button(t("update.checkNow")) { updater.checkForUpdates() }
+            .disabled(!updater.canCheckForUpdates)
+        Toggle(t("update.autoDownload"), isOn: Binding(
+            get: { updater.automaticallyDownloadsUpdates },
+            set: { updater.automaticallyDownloadsUpdates = $0 }))
 
         Divider()
         Button(t("menu.quit")) { NSApp.terminate(nil) }.keyboardShortcut("q")

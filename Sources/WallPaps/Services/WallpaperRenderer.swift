@@ -48,7 +48,8 @@ enum WallpaperRenderer {
                        title: String = "",
                        detail: String = "",
                        canvasPixelSize: CGSize,
-                       options: RenderOptions) -> Data? {
+                       options: RenderOptions,
+                       useJPEG: Bool = false) -> Data? {
         guard let src = loadImage(sourceData) else { return nil }
         let w = Int(canvasPixelSize.width.rounded())
         let h = Int(canvasPixelSize.height.rounded())
@@ -148,7 +149,7 @@ enum WallpaperRenderer {
         }
 
         guard let out = ctx.makeImage() else { return nil }
-        return encodePNG(out)
+        return useJPEG ? encodeJPEG(out) : encodePNG(out)
     }
 
     // MARK: - Gallery atmosphere
@@ -437,6 +438,16 @@ enum WallpaperRenderer {
         guard let dest = CGImageDestinationCreateWithData(
             data, UTType.png.identifier as CFString, 1, nil) else { return nil }
         CGImageDestinationAddImage(dest, image, nil)
+        guard CGImageDestinationFinalize(dest) else { return nil }
+        return data as Data
+    }
+
+    static func encodeJPEG(_ image: CGImage, quality: CGFloat = 0.92) -> Data? {
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(
+            data, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image,
+            [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
         guard CGImageDestinationFinalize(dest) else { return nil }
         return data as Data
     }

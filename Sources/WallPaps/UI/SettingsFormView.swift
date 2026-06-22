@@ -5,6 +5,7 @@ struct SettingsFormView: View {
     @ObservedObject private var controller = AppController.shared
     @ObservedObject private var settings = AppController.shared.settings
     @ObservedObject private var catalog = AppController.shared.catalog
+    @ObservedObject private var updater = UpdaterService.shared
 
     var body: some View {
         Form {
@@ -105,6 +106,23 @@ struct SettingsFormView: View {
                     set: { LaunchAtLogin.set($0) }))
                 Button(t("set.rebuild")) { controller.rebuildLibrary() }
                 Button(t("menu.openMasters")) { controller.openMastersFolder() }
+            }
+
+            Section(t("update.section")) {
+                Toggle(t("update.autoCheck"), isOn: Binding(
+                    get: { updater.automaticallyChecksForUpdates },
+                    set: { updater.automaticallyChecksForUpdates = $0 }))
+                if updater.automaticallyChecksForUpdates {
+                    Toggle(t("update.autoDownload"), isOn: Binding(
+                        get: { updater.automaticallyDownloadsUpdates },
+                        set: { updater.automaticallyDownloadsUpdates = $0 }))
+                    if updater.automaticallyDownloadsUpdates {
+                        Text(t("update.autoDownloadNote"))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Button(t("update.checkNow")) { updater.checkForUpdates() }
+                    .disabled(!updater.canCheckForUpdates)
             }
 
             Section(t("set.about")) {

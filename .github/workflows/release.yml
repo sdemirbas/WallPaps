@@ -1,7 +1,7 @@
 name: Release
 
 # Bir sürüm etiketi (v1.0, v1.1 …) push edildiğinde: imzalar, NOTARIZE eder,
-# staple'lar ve DMG'yi Release olarak yayınlar (kullanıcı uyarısız açar).
+# staple'lar, DMG'yi Release olarak yayınlar ve appcast.xml'i günceller.
 on:
   push:
     tags: ['v*']
@@ -19,6 +19,9 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+        with:
+          # appcast.xml commit için tam git geçmişi gerekli
+          fetch-depth: 0
 
       - name: Xcode'u seç (Swift 6)
         uses: maxim-lobanov/setup-xcode@v1
@@ -48,9 +51,22 @@ jobs:
           NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
           NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
           NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+          SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
+          SPARKLE_FEED_URL: "https://raw.githubusercontent.com/${{ github.repository }}/main/appcast.xml"
         run: |
           set -euo pipefail
           ./Scripts/build-app.sh
+
+          # Sparkle.framework içinde-dışa doğru imzalanmalı
+          if [[ -d "WallPaps.app/Contents/Frameworks/Sparkle.framework" ]]; then
+            codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" \
+              "WallPaps.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/org.sparkle-project.InstallerLauncher.xpc" 2>/dev/null || true
+            codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" \
+              "WallPaps.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/org.sparkle-project.Downloader.xpc" 2>/dev/null || true
+            codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" \
+              "WallPaps.app/Contents/Frameworks/Sparkle.framework"
+          fi
+
           xattr -cr WallPaps.app
           codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" WallPaps.app
           codesign --verify --strict --verbose=2 WallPaps.app
@@ -70,6 +86,40 @@ jobs:
             --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD" --wait
           xcrun stapler staple WallPaps.dmg
           xcrun stapler validate WallPaps.dmg
+
+      - name: appcast.xml güncelle
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+
+          # Sparkle'ın generate_appcast aracını bul
+          GENERATE=$(find .build/artifacts -name "generate_appcast" 2>/dev/null | head -1 || true)
+          if [[ -z "$GENERATE" ]]; then
+            echo "  (uyarı: generate_appcast bulunamadı; appcast atlandı)"
+            exit 0
+          fi
+
+          # Özel anahtarı geçici dosyaya yaz
+          KEY_FILE="$(mktemp)"
+          trap 'rm -f "$KEY_FILE"' EXIT
+          echo "$SPARKLE_ED_PRIVATE_KEY" > "$KEY_FILE"
+
+          DOWNLOAD_PREFIX="https://github.com/${{ github.repository }}/releases/download/${TAG}/"
+          "$GENERATE" \
+            --ed-key-file "$KEY_FILE" \
+            --download-url-prefix "$DOWNLOAD_PREFIX" \
+            --output appcast.xml \
+            .
+
+          # appcast.xml'i main branch'e commit et
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add appcast.xml
+          git diff --cached --quiet || \
+            git commit -m "chore: appcast ${TAG} [skip ci]"
+          git push origin HEAD:main
 
       - name: Release oluştur / güncelle
         uses: softprops/action-gh-release@v2

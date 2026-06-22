@@ -170,6 +170,13 @@ enum Localization {
         "theme.gold": ("Altın yaldız", "Gilded gold"),
         "theme.modern": ("Modern", "Modern"),
         "theme.vintage": ("Vintage", "Vintage"),
+
+        // Updates (Sparkle)
+        "update.checkNow": ("Güncelleme Kontrol Et", "Check for Updates…"),
+        "update.section": ("Güncellemeler", "Updates"),
+        "update.autoCheck": ("Güncellemeleri otomatik ara", "Automatically check for updates"),
+        "update.autoDownload": ("Güncellemeleri otomatik indir ve kur", "Automatically download and install updates"),
+        "update.autoDownloadNote": ("Güncelleme indirilir, bir sonraki başlatmada uygulanır.", "Update downloads in the background and is applied on next launch."),
     ]
 }
 

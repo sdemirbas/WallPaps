@@ -40,6 +40,9 @@ struct WallPapsApp: App {
 /// Drives one-time startup once AppKit has finished launching.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // UpdaterService must be accessed early so SPUStandardUpdaterController
+        // registers itself and can handle any Sparkle URL scheme callbacks.
+        _ = UpdaterService.shared
         AppController.shared.start()
     }
 }

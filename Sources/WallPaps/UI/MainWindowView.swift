@@ -429,7 +429,7 @@ private struct FramedPiece: View {
     var body: some View {
         VStack(spacing: 9) {
             ZStack(alignment: .topTrailing) {
-                ArtThumbnail(path: entry.masterPath, maxPixel: 480, contentMode: .fit)
+                ArtThumbnail(path: entry.sourcePath, maxPixel: 480, contentMode: .fit)
                     .frame(height: 124)
                     .frame(maxWidth: .infinity)
                     .background(Color.black.opacity(0.25))
@@ -545,11 +545,16 @@ struct ArtThumbnail: View {
 
 actor Thumbnailer {
     static let shared = Thumbnailer()
-    private var cache: [String: NSImage] = [:]
+    private let cache: NSCache<NSString, NSImage> = {
+        let c = NSCache<NSString, NSImage>()
+        c.countLimit = 40          // max 40 images retained at once
+        c.totalCostLimit = 80 * 1024 * 1024  // 80 MB pixel budget
+        return c
+    }()
 
     func thumbnail(path: String, maxPixel: Int) -> NSImage? {
-        let key = "\(path)#\(maxPixel)"
-        if let hit = cache[key] { return hit }
+        let key = "\(path)#\(maxPixel)" as NSString
+        if let hit = cache.object(forKey: key) { return hit }
         guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) else { return nil }
         let opts: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -558,7 +563,8 @@ actor Thumbnailer {
         ]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary) else { return nil }
         let img = NSImage(cgImage: cg, size: NSSize(width: cg.width, height: cg.height))
-        cache[key] = img
+        let cost = cg.width * cg.height * 4  // bytes in pixel buffer
+        cache.setObject(img, forKey: key, cost: cost)
         return img
     }
 }

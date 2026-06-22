@@ -7,7 +7,15 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="WallPaps"
 BUNDLE_ID="com.local.wallpaps"
-VERSION="1.0.1"
+VERSION="1.0.2"
+
+# EdDSA public key — generated via Sparkle's generate_keys tool.
+# Private key is in macOS Keychain ("Private key for signing Sparkle updates")
+# and stored as SPARKLE_ED_PRIVATE_KEY in GitHub Secrets for CI.
+SPARKLE_PUBLIC_KEY="${SPARKLE_PUBLIC_KEY:-dn+oa5Nn8zgPy7panM9+Qf8qV478Zi94GEs4+AU9MXM=}"
+
+# Appcast URL served from the repo (raw GitHub content).
+SPARKLE_FEED_URL="${SPARKLE_FEED_URL:-https://raw.githubusercontent.com/sdemirbas/WallPaps/main/appcast.xml}"
 
 echo "▶︎ Derleniyor (release)…"
 swift build -c release
@@ -21,10 +29,27 @@ fi
 APP_DIR="${APP_NAME}.app"
 echo "▶︎ ${APP_DIR} paketleniyor…"
 rm -rf "${APP_DIR}"
-mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources"
+mkdir -p "${APP_DIR}/Contents/MacOS" "${APP_DIR}/Contents/Resources" "${APP_DIR}/Contents/Frameworks"
 cp "${BIN_PATH}" "${APP_DIR}/Contents/MacOS/${APP_NAME}"
 
-# --- App icon -------------------------------------------------------------
+# --- Sparkle.framework -------------------------------------------------------
+# SwiftPM places binary XCFramework artifacts under .build/artifacts.
+SPARKLE_FW=$(find .build/artifacts -name "Sparkle.framework" -type d 2>/dev/null | head -1)
+if [[ -z "${SPARKLE_FW}" ]]; then
+  # Fallback: resolved checkouts path used in some SwiftPM versions
+  SPARKLE_FW=$(find .build/checkouts -name "Sparkle.framework" -type d 2>/dev/null | head -1)
+fi
+if [[ -n "${SPARKLE_FW}" ]]; then
+  echo "▶︎ Sparkle.framework gömülüyor: ${SPARKLE_FW}"
+  cp -R "${SPARKLE_FW}" "${APP_DIR}/Contents/Frameworks/"
+  # Ensure the binary can find the framework at runtime.
+  install_name_tool -add_rpath "@executable_path/../Frameworks" \
+    "${APP_DIR}/Contents/MacOS/${APP_NAME}" 2>/dev/null || true
+else
+  echo "  (uyarı: Sparkle.framework bulunamadı — önce 'swift build' çalıştırın)"
+fi
+
+# --- App icon ----------------------------------------------------------------
 HAS_ICON=0
 echo "▶︎ İkon üretiliyor…"
 ICON_SRC=".build/wallpaps-icon-1024.png"
@@ -51,6 +76,11 @@ if [[ "${HAS_ICON}" == "1" ]]; then
     <key>CFBundleIconName</key>        <string>AppIcon</string>"
 fi
 
+SPARKLE_PUBLIC_KEY_PLIST=""
+if [[ -n "${SPARKLE_PUBLIC_KEY}" ]]; then
+  SPARKLE_PUBLIC_KEY_PLIST="    <key>SUPublicEDKey</key>           <string>${SPARKLE_PUBLIC_KEY}</string>"
+fi
+
 cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -68,13 +98,21 @@ cat > "${APP_DIR}/Contents/Info.plist" <<PLIST
 ${ICON_PLIST}
     <!-- Menu-bar agent: no Dock icon, no main window. -->
     <key>LSUIElement</key>             <true/>
+
+    <!-- Sparkle auto-update -->
+    <key>SUFeedURL</key>               <string>${SPARKLE_FEED_URL}</string>
+    <key>SUEnableAutomaticChecks</key> <true/>
+${SPARKLE_PUBLIC_KEY_PLIST}
 </dict>
 </plist>
 PLIST
 
 echo "▶︎ Ad-hoc imzalanıyor…"
-# sips/iconutil can leave extended attributes that codesign rejects.
 xattr -cr "${APP_DIR}" 2>/dev/null || true
+# Sign Sparkle.framework first (inside-out signing required by Apple)
+if [[ -d "${APP_DIR}/Contents/Frameworks/Sparkle.framework" ]]; then
+  codesign --force --sign - "${APP_DIR}/Contents/Frameworks/Sparkle.framework" >/dev/null 2>&1 || true
+fi
 if codesign --force --sign - "${APP_DIR}" >/dev/null 2>&1; then
   echo "  ✓ imzalandı (ad-hoc)"
 else

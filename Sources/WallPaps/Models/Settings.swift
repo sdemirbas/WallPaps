@@ -141,8 +141,8 @@ final class Settings: ObservableObject {
         didSet { defaults.set(autoFrameByPeriod, forKey: Keys.autoFrame) }
     }
 
-    /// Selectable pool sizes (disk ≈ 10–12 MB per artwork).
-    static let librarySizeOptions = [40, 100, 200, 400]
+    /// Selectable pool sizes (disk ≈ 2–4 MB per artwork with JPEG variants).
+    static let librarySizeOptions = [20, 50, 100, 200]
 
     init() {
         let saved = defaults.array(forKey: Keys.artists) as? [String]
@@ -158,7 +158,7 @@ final class Settings: ObservableObject {
         favoritesOnly = defaults.object(forKey: Keys.favOnly) as? Bool ?? false
         notifyOnChange = defaults.object(forKey: Keys.notify) as? Bool ?? false
         orientation = Orientation(rawValue: defaults.string(forKey: Keys.orientation) ?? "") ?? .any
-        librarySize = defaults.object(forKey: Keys.librarySize) as? Int ?? 100
+        librarySize = defaults.object(forKey: Keys.librarySize) as? Int ?? 20
         hasOnboarded = defaults.object(forKey: Keys.onboarded) as? Bool ?? false
         language = AppLanguage(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .system
         activeCollection = defaults.string(forKey: Keys.collection)

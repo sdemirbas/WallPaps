@@ -28,7 +28,7 @@ final class ArtLibrary: ObservableObject {
     private let met = MetProvider()
     private let cleveland = ClevelandProvider()
 
-    let lowWaterMark = 8
+    let lowWaterMark = 5
     var needsMore: Bool { entries.count < lowWaterMark }
 
     // MARK: - Rotation
@@ -65,7 +65,7 @@ final class ArtLibrary: ObservableObject {
         let w = Int(pixelSize.width.rounded()), h = Int(pixelSize.height.rounded())
         guard w > 0, h > 0 else { return nil }
         let opts = themedOptions(options, for: entry.artwork)
-        let name = "\(entry.artwork.fileStem)@\(w)x\(h)-\(opts.styleSignature).png"
+        let name = "\(entry.artwork.fileStem)@\(w)x\(h)-\(opts.styleSignature).jpg"
         let url = LibraryPaths.wallpapersDir.appendingPathComponent(name)
         if FileManager.default.fileExists(atPath: url.path) { return url }
 
@@ -73,13 +73,14 @@ final class ArtLibrary: ObservableObject {
               !sourceData.isEmpty else { return nil }
         let caption = entry.artwork.caption, title = entry.artwork.title
         let detail = entry.artwork.medium ?? ""
-        let png = await Task.detached(priority: .userInitiated) {
+        let jpeg = await Task.detached(priority: .userInitiated) {
             WallpaperRenderer.render(sourceData: sourceData, caption: caption, title: title,
-                                     detail: detail, canvasPixelSize: pixelSize, options: opts)
+                                     detail: detail, canvasPixelSize: pixelSize, options: opts,
+                                     useJPEG: true)
         }.value
-        guard let png else { return nil }
+        guard let jpeg else { return nil }
         LibraryPaths.ensureDirs()
-        try? png.write(to: url, options: .atomic)
+        try? jpeg.write(to: url, options: .atomic)
         return url
     }
 
@@ -258,6 +259,7 @@ final class ArtLibrary: ObservableObject {
         let fm = FileManager.default
         try? fm.removeItem(atPath: entry.sourcePath)
         try? fm.removeItem(atPath: entry.masterPath)
+        // Remove both .jpg variants (new) and legacy .png variants
         let stem = entry.artwork.fileStem + "@"
         if let files = try? fm.contentsOfDirectory(atPath: LibraryPaths.wallpapersDir.path) {
             for f in files where f.hasPrefix(stem) {
