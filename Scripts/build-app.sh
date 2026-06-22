@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 
 APP_NAME="WallPaps"
 BUNDLE_ID="com.local.wallpaps"
-VERSION="1.0.2"
+VERSION="1.0.3"
 
 # EdDSA public key — generated via Sparkle's generate_keys tool.
 # Private key is in macOS Keychain ("Private key for signing Sparkle updates")

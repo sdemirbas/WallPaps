@@ -57,24 +57,60 @@ jobs:
           set -euo pipefail
           ./Scripts/build-app.sh
 
-          # Sparkle.framework içinde-dışa doğru imzalanmalı
+          # 1) Quarantine + imzalamadan ÖNCE tüm extended attribute'ları temizle.
+          #    Sonraya bırakılırsa Sparkle imzaları silinir — notarize "Invalid" verir.
+          xattr -cr WallPaps.app
+
+          # 2) Sparkle.framework: inside-out imzalama (yapraktan köke).
+          #    --preserve-metadata=entitlements: XPC servislerinin orijinal network.client
+          #    vb. entitlement'larını korur; bunlar notarize için zorunlu.
           if [[ -d "WallPaps.app/Contents/Frameworks/Sparkle.framework" ]]; then
-            codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" \
-              "WallPaps.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/org.sparkle-project.InstallerLauncher.xpc" 2>/dev/null || true
-            codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" \
-              "WallPaps.app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/org.sparkle-project.Downloader.xpc" 2>/dev/null || true
-            codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" \
-              "WallPaps.app/Contents/Frameworks/Sparkle.framework"
+            FW="WallPaps.app/Contents/Frameworks/Sparkle.framework"
+
+            # 2a) Tüm yürütülebilir dosyalar ve dylib'ler (yaprak düğümler önce)
+            find "$FW" -type f \( -perm +0111 -o -name "*.dylib" \) | while read -r f; do
+              codesign --force --options runtime --timestamp \
+                --sign "$SIGN_IDENTITY" --preserve-metadata=entitlements "$f" 2>/dev/null || true
+            done
+
+            # 2b) XPC servisleri (bundle olarak imzalanır — içerikleri 2a'da imzalandı)
+            find "$FW" -name "*.xpc" -type d | while read -r d; do
+              codesign --force --options runtime --timestamp \
+                --sign "$SIGN_IDENTITY" --preserve-metadata=entitlements "$d"
+            done
+
+            # 2c) Updater.app varsa (Sparkle 2.x — iç güncelleme UI'ı)
+            if [[ -d "$FW/Versions/B/Updater.app" ]]; then
+              codesign --force --options runtime --timestamp \
+                --sign "$SIGN_IDENTITY" "$FW/Versions/B/Updater.app"
+            fi
+
+            # 2d) Framework'ün kendisi (--options runtime zorunlu)
+            codesign --force --options runtime --timestamp \
+              --sign "$SIGN_IDENTITY" "$FW"
           fi
 
-          xattr -cr WallPaps.app
+          # 3) Ana uygulamayı imzala
           codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" WallPaps.app
           codesign --verify --strict --verbose=2 WallPaps.app
 
-          # Uygulamayı notarize + staple
+          # Uygulamayı notarize + staple (log başarısızlıkta otomatik alınır)
           ditto -c -k --keepParent WallPaps.app app.zip
-          xcrun notarytool submit app.zip --apple-id "$NOTARY_APPLE_ID" \
-            --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD" --wait
+          NOTARY_OUT="$(xcrun notarytool submit app.zip --apple-id "$NOTARY_APPLE_ID" \
+            --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD" \
+            --wait --output-format json 2>&1)"
+          echo "$NOTARY_OUT"
+          NOTARY_STATUS="$(echo "$NOTARY_OUT" | python3 -c \
+            "import sys,json; d=json.load(sys.stdin); print(d.get('status',''))" 2>/dev/null || true)"
+          if [[ "$NOTARY_STATUS" != "Accepted" ]]; then
+            NOTARY_ID="$(echo "$NOTARY_OUT" | python3 -c \
+              "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || true)"
+            echo "=== Notarize BAŞARISIZ (${NOTARY_STATUS}) — detaylı log ==="
+            [[ -n "$NOTARY_ID" ]] && xcrun notarytool log "$NOTARY_ID" \
+              --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" \
+              --password "$NOTARY_PASSWORD" || true
+            exit 1
+          fi
           xcrun stapler staple WallPaps.app
 
           # DMG paketle, notarize + staple
