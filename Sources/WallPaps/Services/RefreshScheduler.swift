@@ -1,10 +1,13 @@
 import Foundation
 
-/// Low-energy periodic trigger built on `NSBackgroundActivityScheduler`, which
-/// lets macOS coalesce/defer the work to save power instead of a tight timer.
+/// Reliable periodic trigger using DispatchSourceTimer.
+///
+/// NSBackgroundActivityScheduler was replaced because macOS can defer it
+/// aggressively (sometimes hours) under power-saving heuristics — unacceptable
+/// for a user-configured wallpaper rotation interval.
 final class RefreshScheduler {
-    private var activity: NSBackgroundActivityScheduler?
-    private let identifier = "com.local.wallpaps.refresh"
+    private var timer: DispatchSourceTimer?
+    private let queue = DispatchQueue(label: "com.local.wallpaps.refresh", qos: .utility)
     private let onFire: @Sendable () -> Void
 
     init(onFire: @escaping @Sendable () -> Void) {
@@ -13,22 +16,18 @@ final class RefreshScheduler {
 
     /// (Re)start the scheduler with the given interval in seconds.
     func start(interval: TimeInterval) {
-        activity?.invalidate()
-        let activity = NSBackgroundActivityScheduler(identifier: identifier)
-        activity.repeats = true
-        activity.interval = interval
-        // Generous tolerance => the OS batches our wake-up with other activity.
-        activity.tolerance = max(60, interval * 0.25)
-        activity.qualityOfService = .background
-        activity.schedule { [onFire] completion in
-            onFire()
-            completion(.finished)
-        }
-        self.activity = activity
+        timer?.cancel()
+        let t = DispatchSource.makeTimerSource(queue: queue)
+        // First fire after `interval`; leeway = 1% of interval, capped at 60 s.
+        let leeway = DispatchTimeInterval.seconds(Int(min(60, interval * 0.01)))
+        t.schedule(deadline: .now() + interval, repeating: interval, leeway: leeway)
+        t.setEventHandler { [onFire] in onFire() }
+        t.resume()
+        timer = t
     }
 
     func stop() {
-        activity?.invalidate()
-        activity = nil
+        timer?.cancel()
+        timer = nil
     }
 }
